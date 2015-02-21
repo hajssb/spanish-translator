@@ -3,11 +3,13 @@ from collections import defaultdict
 from stemming.porter2 import stem
 import codecs
 import re
+from math import log
 
 class ExpectationMaximization:
 	def __init__(self, spanishFilename, englishFilename):
 		self.translationProbabilities = dict()
 		self.translationMap = {}
+		self.languageModelFrequencies = defaultdict(int)
 		self.learnProbabilities(spanishFilename, englishFilename)
 
 	def getTranslationMap(self):
@@ -32,7 +34,7 @@ class ExpectationMaximization:
 		englishSentences = codecs.open(englishFilename, 'r', 'UTF-8').readlines()
 
 		# assume they are same length
-		for i in range(0, len(spanishSentences)):
+		for i in range(0, len(spanishSentences)/4):
 			new_sentence_pair = {}
 			new_sentence_pair['spanish'] = \
 			list(map(lambda word: word.lower(), re.sub("[^\w]|[0-9]", " ", spanishSentences[i], flags=re.UNICODE).split()))
@@ -51,11 +53,13 @@ class ExpectationMaximization:
 				all_spanish_words.add(spanish_word)
 			for eng_word in sentence["english"]:
 				all_english_words.add(eng_word)
+				self.languageModelFrequencies[eng_word] += 1.1
 
 		uniform_prob = 1 / float(len(all_english_words))
 
 		for spanish_word in all_spanish_words:
 			self.translationProbabilities[spanish_word] = defaultdict(lambda: uniform_prob)
+
 		return all_spanish_words, all_english_words
 
 	def learnUntilConvergence(self, sentence_pairs, all_spanish_words, all_english_words):
@@ -83,14 +87,14 @@ class ExpectationMaximization:
 			print("Updating probabilities for each word pair")
 			for span_word in all_spanish_words:
 				best_translation = ""
-				best_prob = 0
+				best_prob = float('-inf')
 
 				probabilities_for_spanish_word = self.translationProbabilities[span_word]
 				counts_of_span_word_coocurrences = counts_of_coocurrences[span_word]
 				total = totals_spanish[spanish_word]
 				for engl_word in all_english_words:
 					probabilities_for_spanish_word[engl_word] = counts_of_span_word_coocurrences[engl_word] / total
-
+					# probabilities_for_spanish_word[engl_word] *= log(self.languageModelFrequencies[engl_word], 10)
 					if probabilities_for_spanish_word[engl_word] > best_prob:
 						best_translation = engl_word
 						best_prob = probabilities_for_spanish_word[engl_word]
@@ -120,10 +124,10 @@ class ExpectationMaximization:
 		return True
 
 if __name__ == '__main__':
-	x = ExpectationMaximization('es-en/dev/newstest2012.es', 'es-en/dev/newstest2012.en')
+	x = ExpectationMaximization('es-en/train/europarl-v7.es-en.es', 'es-en/train/europarl-v7.es-en.en')
 	print("Writing to file")
-	f = codecs.open("overnight_output2", "w", "UTF-8")
+	f = codecs.open("without_lang_model.out", "w", "UTF-8")
 	for spanish_word, eng_word in x.getTranslationMap().items():
-		f.write(spanish_word + " :: " + eng_word + "\n")
+		f.write(spanish_word + "::" + eng_word + "\n")
 	f.close()
 
