@@ -36,9 +36,7 @@ def convert_escaped_chars(word):
 	return word
 
 def should_remove(word):
-	# Reverse ? and !
-	# TODO: This is not working
-	return word == u'\xc2\xbf' or word == u'\xc2\xa1'
+	return word.decode('utf-8') == u'\u00bf' or word.decode('utf-8') == u'\u00A1'
 
 def is_vowel(char):
 	return char == 'a' or char == 'e' or char == 'i' or char == 'o' or char == 'u'
@@ -47,6 +45,27 @@ def replace_a_and(english_words):
 	for i in range(0, len(english_words)-1):
 		if english_words[i] == "a" and is_vowel(english_words[i+1][0]):
 			english_words[i] = "an"
+
+def delete_repeated_words(english_words):
+	ret = []
+	for word in english_words:
+		if len(ret) == 0 or word != ret[-1]:
+			ret.append(word)
+	return ret
+
+# def remove_a_before_percent(english_words):
+# 	ret = []
+# 	for i in range(0, len(english_words)-1):
+# 		if len(ret) == 0: ret.append(english_words[i])
+# 		else:
+# 			prev_word = english_words[i-1]
+# 			word = english_words[i]
+# 			next_word = english_words[i+1]
+# 			if (prev_word == 'a' or prev_word == 'the') and word.isdigit() and next_word == "%":
+# 				continue
+# 			else:
+# 				ret.append(word)
+# 	return ret
 
 def translate_sentence(spanish_sentence):
 	english_words = []
@@ -63,9 +82,13 @@ def translate_sentence(spanish_sentence):
 
 	english_words = rearrange_pos(english_words)
 	replace_a_and(english_words)
+	english_words = delete_repeated_words(english_words)
+	# english_words = remove_a_before_percent(english_words)
 	return english_words
 
 if __name__ == '__main__':
+	reload(sys)    # to re-enable sys.setdefaultencoding()
+	sys.setdefaultencoding('utf-8')
 	bitext = ingest_model(sys.argv[2])
 
 	file_to_translate = sys.argv[1]
