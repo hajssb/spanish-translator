@@ -28,8 +28,8 @@ def generate_all_one_edit(word):
 	deletions = generate_all_deletions(word)
 	all_words.extend(deletions)
 
-	replacements = generate_all_replacements(word)
-	all_words.extend(replacements)
+	# replacements = generate_all_replacements(word)
+	# all_words.extend(replacements)
 
 	return all_words
 

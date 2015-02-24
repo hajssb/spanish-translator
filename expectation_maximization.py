@@ -34,13 +34,13 @@ class ExpectationMaximization:
 		englishSentences = codecs.open(englishFilename, 'r', 'UTF-8').readlines()
 
 		# assume they are same length
-		for i in range(0, len(spanishSentences)/4):
+		for i in range(0, len(spanishSentences)):
 			new_sentence_pair = {}
 			new_sentence_pair['spanish'] = \
-			list(map(lambda word: word.lower(), re.sub("[^\w]|[0-9]", " ", spanishSentences[i], flags=re.UNICODE).split()))
+			list(map(lambda word: word.lower(), re.sub("[^\w]", " ", spanishSentences[i], flags=re.UNICODE).split()))
 
 			new_sentence_pair['english'] = \
-			list(map(lambda word: word.lower(), re.sub("[^\w]|[0-9]", " ", englishSentences[i], flags=re.UNICODE).split()))
+			list(map(lambda word: word.lower(), re.sub("[^\w]", " ", englishSentences[i], flags=re.UNICODE).split()))
 			sentence_pairs.append(new_sentence_pair)
 
 		return sentence_pairs
@@ -101,32 +101,34 @@ class ExpectationMaximization:
 
 				best_translation_map[span_word] = best_translation
 
-			print("Checking for convergence")
-			self.translationMap = best_translation_map
-			if self.bestTranslationHasConverged(best_translation_map, oldBestTranslationForEachWord):
-				self.translationMap = best_translation_map
-				return
-			else:
-				oldBestTranslationForEachWord = best_translation_map
+		self.translationMap = best_translation_map
 
-	def computeBestTranslationForEachWord(self, heaps):
-		print("Computing best translation for each word")
-		bestTranslationForWord = dict()
-		for spanish_word in self.translationProbabilities.keys():
-			bestTranslationForWord[spanish_word] = heappop(heaps[spanish_word])[1]
-		return bestTranslationForWord
+			# print("Checking for convergence")
+			# self.translationMap = best_translation_map
+			# if self.bestTranslationHasConverged(best_translation_map, oldBestTranslationForEachWord):
+			# 	self.translationMap = best_translation_map
+			# 	return
+			# else:
+			# 	oldBestTranslationForEachWord = best_translation_map
 
-	def bestTranslationHasConverged(self, newBestTranslationForEachWord, oldBestTranslationForEachWord):
-		print("Comparing old best translation to new")
-		for spanish_word in newBestTranslationForEachWord:
-			if newBestTranslationForEachWord[spanish_word] != oldBestTranslationForEachWord[spanish_word]:
-				return False
-		return True
+	# def computeBestTranslationForEachWord(self, heaps):
+	# 	print("Computing best translation for each word")
+	# 	bestTranslationForWord = dict()
+	# 	for spanish_word in self.translationProbabilities.keys():
+	# 		bestTranslationForWord[spanish_word] = heappop(heaps[spanish_word])[1]
+	# 	return bestTranslationForWord
+
+	# def bestTranslationHasConverged(self, newBestTranslationForEachWord, oldBestTranslationForEachWord):
+	# 	print("Comparing old best translation to new")
+	# 	for spanish_word in newBestTranslationForEachWord:
+	# 		if newBestTranslationForEachWord[spanish_word] != oldBestTranslationForEachWord[spanish_word]:
+	# 			return False
+	# 	return True
 
 if __name__ == '__main__':
-	x = ExpectationMaximization('es-en/train/europarl-v7.es-en.es', 'es-en/train/europarl-v7.es-en.en')
+	x = ExpectationMaximization('es-en/dev-and-train.es', 'es-en/dev-and-train.en')
 	print("Writing to file")
-	f = codecs.open("without_lang_model.out", "w", "UTF-8")
+	f = codecs.open("bitext_full.out", "w", "UTF-8")
 	for spanish_word, eng_word in x.getTranslationMap().items():
 		f.write(spanish_word + "::" + eng_word + "\n")
 	f.close()
