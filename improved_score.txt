@@ -1,0 +1,3 @@
+3000 sentences evaluated.
+BLEU-1 score: 49.540700
+BLEU-2 score: 11.034354

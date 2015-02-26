@@ -1,8 +1,13 @@
+import os
 import sys
 import codecs
 import re
 from edit_distance import generate_all_one_edit
 from nltk import pos_tag
+#from cmd import tree-tagger-spanish
+import subprocess
+#import treetaggerwrapper
+
 
 def ingest_model(model_filename):
 	f = codecs.open(model_filename, 'r', "UTF-8")
@@ -13,8 +18,7 @@ def ingest_model(model_filename):
 	return bitext
 
 def should_swap(tag, nextTag, firstWord, nextWord):
-	return ((tag == "NN" or tag == "NNS" or tag == "NNP") and (nextTag == "JJ" or nextTag == "MD")) or \
-	(tag == "RB" and nextTag == "VBZ") or \
+	return (tag == "RB" and nextTag == "VBZ") or \
 	(firstWord == "states" and nextWord == "united")
 
 def is_verb(tag):
@@ -91,10 +95,68 @@ def improvements_spanish(spanish_sentence):
 	spanish_sentence = regex_improvements(spanish_sentence)
 	return spanish_sentence
 
+def tag_is_noun(tag):
+	return tag == "NC" or tag == "NMEA" or tag == "NP" or tag == "REL"
+
+def tag_is_adj(tag):
+	return tag == "ADJ"
+
+def tag_and_rearrange_sentence(spanish_sentence):
+	f = open('file.txt', 'w')
+	ascii_sentence = []
+	for i,w in enumerate(spanish_sentence):
+		try:
+			ascii_sentence.append(spanish_sentence[i].decode("windows-1252").encode("utf8"))
+		except:
+			return spanish_sentence
+	
+	
+
+	f.write(" ".join(ascii_sentence))
+	f.close()
+	args = ["cmd/tree-tagger-spanish", "file.txt"]
+	p = subprocess.Popen(args, stdout=subprocess.PIPE)
+	p.wait()
+	output = p.communicate()[0]
+	output_as_array = output.split('\n')
+	if output_as_array[len(output_as_array)-1].isspace() or \
+output_as_array[len(output_as_array)-1] == "":
+		output_as_array = output_as_array[0:-1]
+	i = 0
+	word_idx = 0
+
+	while i < len(output_as_array)-1:
+		line = output_as_array[i]
+		sentence_as_array = line.split()
+		if len(sentence_as_array) == 0: 
+			i += 1
+			continue
+		word = sentence_as_array[0]
+		tag = sentence_as_array[1]
+		nextTag = output_as_array[i+1].split()[1]
+		nextWord = output_as_array[i+1].split()[0]
+		if tag_is_noun(tag) and tag_is_adj(nextTag):
+			noun_word_length = len(word.split())
+			adj_word_length = len(nextWord.split())
+			
+			noun_words = spanish_sentence[word_idx:word_idx+noun_word_length]
+			adj_words = spanish_sentence[word_idx+noun_word_length:word_idx+noun_word_length+adj_word_length]
+			
+			spanish_sentence[word_idx:word_idx+adj_word_length] = adj_words
+			spanish_sentence[word_idx+adj_word_length:word_idx+adj_word_length+noun_word_length] = noun_words
+
+			i += 2
+			word_idx += len(word.split()) + len(nextWord.split())
+		else:
+			i += 1
+			word_idx += len(word.split())
+	return spanish_sentence
+
+
 def translate_sentence(spanish_sentence):
 	english_words = []
 
-	spanish_sentence = improvements_spanish(spanish_sentence)
+	#spanish_sentence = improvements_spanish(spanish_sentence)
 
 	for spanish_word in spanish_sentence:
 		if is_reverse_punctuation(spanish_word):
@@ -120,12 +182,14 @@ if __name__ == '__main__':
 	f = codecs.open('translation_pos.out', 'w', "UTF-8")
 
 	lines = codecs.open(file_to_translate, 'r', "UTF-8").readlines()
+
 	for line_idx in range(0,len(lines)-1):
 		line = lines[line_idx]
 		spanish_sentence = line.lower().split()
 
+		#spanish tagging/rearranging
+		spanish_sentence = tag_and_rearrange_sentence(spanish_sentence)
 		english_sentence = translate_sentence(spanish_sentence)
-
 		for eng_word in english_sentence:
 			f.write(eng_word + " ")
 		f.write("\n")

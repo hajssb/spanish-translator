@@ -126,7 +126,7 @@ class ExpectationMaximization:
 	# 	return True
 
 if __name__ == '__main__':
-	x = ExpectationMaximization('es-en/dev-and-train.es', 'es-en/dev-and-train.en')
+	x = ExpectationMaximization('train.es', 'train.en')
 	print("Writing to file")
 	f = codecs.open("bitext_full.out", "w", "UTF-8")
 	for spanish_word, eng_word in x.getTranslationMap().items():

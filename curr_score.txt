@@ -1,2 +1,0 @@
-BLEU-1 score: 49.510078
-BLEU-2 score: 10.793337

@@ -1,0 +1,7 @@
+data/setup.cfg.i
+data/stemming/__init__.py.i
+data/stemming/paicehusk.py.i
+data/setup.py.i
+data/stemming/lovins.py.i
+data/stemming/porter2.py.i
+data/stemming/porter.py.i
